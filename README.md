@@ -31,9 +31,9 @@ This repo is being developed in public on purpose: to get early feedback, to doc
 ## License
 
 This repository uses a dual license:
-- **Text and documentation** (the whitepaper itself): [CC-BY-4.0](./LICENSE) — reuse and adaptation welcome, with attribution.
-- **Code examples** (`examples/`): [MIT](./examples/LICENSE) — use freely.
+- **Text and documentation** (the whitepaper itself): [CC-BY-4.0](./LICENSE) reuse and adaptation welcome, with attribution.
+- **Code examples** (`examples/`): [MIT](./examples/LICENSE) use freely.
 
 ## Get in touch
 
-If you're working on similar problems — agent payments, budget delegation, or M2M infrastructure more broadly — I'd like to hear from you. Open an issue, or find me on [LinkedIn](https://www.linkedin.com/in/marco-celeri-61730b55).
+If you're working on similar problems (agent payments, budget delegation, or M2M infrastructure more broadly) I'd like to hear from you. Open an issue, or find me on [LinkedIn](https://www.linkedin.com/in/marco-celeri-61730b55).
