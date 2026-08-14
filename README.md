@@ -12,7 +12,7 @@ This is a niche exploration, not a claim to revolutionize agent payments. It's b
 
 ## Status
 
-🚧 Early stage. Structure is in place, most sections are still TODOs. Follow along via commits/releases rather than expecting a finished document any time soon — see [ROADMAP.md](./ROADMAP.md) for what's done and what's next.
+🚧 Early stage. Structure is in place, most sections are still TODOs. Follow along via commits/releases rather than expecting a finished document any time soon. 
 
 ## Contents
 
