@@ -33,7 +33,7 @@ Not a payment protocol in the same sense, a distribution platform. Google Cloud 
 | X402 | ❌ (fiat path unconfirmed) | ❌ | ✅ | ❌ |
 | MPP | ✅ (charge only, confirmed) | ❌ (MoR unconfirmed) | ✅ | ❌ |
 | MoR marketplaces (GCM + AP2) | ✅ | ✅ | ✅ | ❌ |
-| **This whitepaper** | ✅ | ✅ | (n/a. Payment happens once, upfront) | ✅ |
+| **This whitepaper** | ✅ | ✅ | ❌ (Payment happens once, upfront) | ✅ |
 
 No existing option checks every column at once. L402 has the delegation mechanism this whitepaper borrows from, but on the wrong settlement rail for the target audience. Everything fiat/MoR-capable stops at the level of a single purchasing entity, without a way to further delegate that budget down into an agent swarm. That gap is the whitepaper's actual scope, not a claim that M2M payments or MoR-backed monetization don't exist yet, both clearly do.
 
