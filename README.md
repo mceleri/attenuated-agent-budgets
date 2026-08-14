@@ -1,6 +1,6 @@
 # Attenuated Agent Budgets
 
-**Exploring cryptographic budget delegation (macaroons) for multi-agent M2M payments. 🚧 Work in progress. 🚧 **
+** Exploring cryptographic budget delegation (macaroons) for multi-agent M2M payments. 🚧 Work in progress. 🚧 **
 
 ## What this is
 
