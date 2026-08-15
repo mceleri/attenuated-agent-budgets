@@ -1,6 +1,6 @@
 # Attenuated Agent Budgets
 
-Exploring cryptographic budget delegation (macaroons) for multi-agent M2M payments. 🚧 Work in progress. 🚧
+Exploring cryptographic budget delegation (biscuits) for multi-agent M2M payments. 🚧 Work in progress. 🚧
 
 ## What this is
 
@@ -20,8 +20,8 @@ This is a niche exploration, not a claim to revolutionize agent payments. It's b
 |---|---|
 | [`00-abstract.md`](./00-abstract.md) | Abstract and problem framing |
 | [`01-landscape.md`](./01-landscape.md) | Comparative landscape of M2M payment/discovery protocols as of mid-2026 (L402, X402, MPP, MoR platforms) |
-| [`02-architecture.md`](./02-architecture.md) | Master Macaroon architecture: issuance, attenuation, sub-budget delegation |
-| [`03-open-problems.md`](./03-open-problems.md) | Explicit list of unresolved issues (server-side state, key sharing, revocation, MoR/protocol integration gaps) |
+| [`02-architecture.md`](./02-architecture.md) | Biscuits architecture: issuance, attenuation, sub-budget delegation |
+| [`03-open-problems.md`](./03-open-problems.md) | Explicit list of unresolved issues (server-side state, revocation, MoR/protocol integration gaps) |
 | [`examples/`](./examples/) | Minimal code examples illustrating the concepts (mock issuance, attenuation, verification) |
 
 ## Why open, incremental, and public

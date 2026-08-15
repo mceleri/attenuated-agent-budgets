@@ -11,7 +11,7 @@ Four questions are used to compare them:
 
 ## L402
 
-Lightning-native, built on macaroons for authentication and (in principle) attenuation. This is the direct technical inspiration for this whitepaper's use of macaroons. The cryptographic delegation model already exists here, it's just tied to a settlement rail (Lightning) this whitepaper's target audience can't use. No fiat path, no MoR concept, requires a Lightning-capable wallet on the client side.
+Lightning-native, built on macaroons for authentication and (in principle) attenuation. This is the direct technical inspiration for this whitepaper's use of biscuits (not macaroons to avoid shared keys between different services). The cryptographic delegation model already exists here, it's just tied to a settlement rail (Lightning) this whitepaper's target audience can't use. No fiat path, no MoR concept, requires a Lightning-capable wallet on the client side.
 
 ## X402
 
@@ -33,7 +33,7 @@ Not a payment protocol in the same sense, a distribution platform. Google Cloud 
 | X402 | ❌ (fiat path unconfirmed) | ❌ | ✅ | ❌ |
 | MPP | ✅ (charge only, confirmed) | ❌ (MoR unconfirmed) | ✅ | ❌ |
 | MoR marketplaces (GCM + AP2) | ✅ | ✅ | ✅ | ❌ |
-| **This whitepaper** | ✅ | ✅ | ❌ (Payment happens once, upfront) | ✅ |
+| **This whitepaper** | ✅ | ✅ | ❌ (Payment happens once, upfront) | ✅ (via biscuits)|
 
 No existing option checks every column at once. L402 has the delegation mechanism this whitepaper borrows from, but on the wrong settlement rail for the target audience. Everything fiat/MoR-capable stops at the level of a single purchasing entity, without a way to further delegate that budget down into an agent swarm. That gap is the whitepaper's actual scope, not a claim that M2M payments or MoR-backed monetization don't exist yet, both clearly do.
 
