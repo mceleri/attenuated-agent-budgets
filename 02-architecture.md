@@ -218,39 +218,3 @@ Conflating the two in one header would be a modeling mistake even if convenient.
 
 **`PAYMENT-SIGNATURE` is reinterpreted for sub-agent calls, not just reused.** When a sub-agent calls a service with its attenuated Biscuit token, putting that token in `PAYMENT-SIGNATURE` is a natural fit semantically, from the service's point of view, a valid attenuated token *is* proof of authorization, exactly what `PAYMENT-SIGNATURE` is for.
 But it is a reinterpretation: X402 expects a payload authorizing *this specific payment*, not a longer-lived bearer credential presented across many calls.
-
-### Example exchange (illustrative, not final)
-
-```
-# 1. Orchestrator calls the endpoint, has no token yet (worst case)
-GET /v1/ocr HTTP/1.1
-Host: provider.example
-
-HTTP/1.1 402 Payment Required
-PAYMENT-REQUIRED: <base64 JSON PaymentRequirements, scheme=mor-fiat>
-  { "scheme": "mor-fiat", "amount": "10.00", "currency": "EUR",
-    "checkout_url": "https://mor.example/checkout/abc123",
-    "supported_budget_models": ["fixed-partition", "shared-counter"] }
-
-# 2. Orchestrator surfaces the requirement upstream (human/payer) and
-#    retries with backoff. How the token gets provisioned in the
-#    meantime is up to the Provider's chosen mechanism.
-
-GET /v1/ocr HTTP/1.1
-Host: provider.example
-
-HTTP/1.1 402 Payment Required   # still not available — retry again later
-...
-
-# 3. Once available, the Orchestrator has the Master Token and can
-#    attenuate it for its sub-agents (see Attenuation above) without
-#    any further round-trip to the Provider.
-
-# 4. A sub-agent, holding an attenuated token, calls the actual service
-GET /v1/ocr HTTP/1.1
-Host: provider.example
-PAYMENT-SIGNATURE: <base64 attenuated Biscuit token>
-
-HTTP/1.1 200 OK
-{ "text": "..." }
-```
