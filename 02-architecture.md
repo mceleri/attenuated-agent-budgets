@@ -169,9 +169,3 @@ sequenceDiagram
     P-->>SB: 200 OK (Processed)
 ```
 
-## 8. Cross-References
-
-- **Wire Protocol & X402 Extension**: Concrete HTTP headers, JSON schemas, status codes, and traces are specified in [`03-wire-protocol.md`](./03-wire-protocol.md).
-- **Tax & Regulatory Framework**: The EU Voucher Directive legal analysis (SPV vs. MPV) is detailed in [`04-tax-and-legal.md`](./04-tax-and-legal.md).
-- **Open Problems**: Known trade-offs and limitations are tracked in [`05-open-problems.md`](./05-open-problems.md).
-- **Bibliography**: Complete citations are listed in [`06-references.md`](./06-references.md).
