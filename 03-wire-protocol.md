@@ -143,7 +143,7 @@ The protocol establishes explicit mappings between validation outcomes, HTTP sta
 ## 5. End-to-End Protocol Exchange Flows
 
 To ground the wire specifications in a realistic operational context, the exchange flows below use a running scenario based on an API Provider exposing two complementary services:
-1. **Document OCR Extraction Service (`POST /v1/ocr`)**: A fixed-cost service charging €0.05 per processed document. Because OCR tasks process document data or image references, requests always send a JSON payload in the request body.
+1. **Document OCR Extraction Service (`POST /v1/ocr`)**: A fixed-cost service charging €0.05 per processed document.
 2. **Generative LLM Analysis Service (`POST /v1/chat/completions`)**: A variable-cost streaming service that processes prompt contexts and settles dynamically using the Two-Phase Hold/Capture pattern.
 
 ### 5.1 Flow 1: Initial Discovery & 402 Challenge
