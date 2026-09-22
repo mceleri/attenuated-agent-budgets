@@ -11,29 +11,29 @@ Four questions are used to compare them:
 
 ## L402
 
-Lightning-native, built on macaroons for authentication and (in principle) attenuation. This is the direct technical inspiration for this whitepaper's use of biscuits (not macaroons to avoid shared keys between different services). The cryptographic delegation model already exists here, it's just tied to a settlement rail (Lightning) this whitepaper's target audience can't use. No fiat path, no MoR concept, requires a Lightning-capable wallet on the client side.
+Lightning-native, built on Macaroons [BIRGISSON2014] for authentication and attenuation [L402]. This protocol represents the direct technical inspiration for using Biscuit tokens [COUPRIE2021] (chosen over Macaroons to avoid shared symmetric keys across verifying endpoints). While L402 demonstrates the viability of cryptographic delegation, it is bound to a settlement rail (the Lightning Network) that creates taxable disposal friction for European businesses. It provides no fiat on-ramp, no Merchant of Record abstraction, and requires client-side wallet infrastructure.
 
 ## X402
 
-HTTP 402-based, built around stablecoin settlement (predominantly on Base). Introduces a `Facilitator` role for payment verification/settlement, and v2 has announced compatibility with legacy fiat rails (ACH, SEPA, card networks) but as of mid-2026, no production implementation of a pure fiat, wallet-free payment flow has been confirmed; the one concrete fiat-adjacent integration found (Stripe) still requires a client-signed crypto authorization under the hood. No native mechanism for splitting a budget across sub-agents; v2 is introducing wallet-based sessions (SIWx), which is a step toward reusable authorization but not attenuated sub-delegation.
+An HTTP 402-based standard [X402] historically centered on stablecoin settlement (primarily on Base). It introduces a `Facilitator` role for verification and settlement. While the v2 specification introduces abstraction hooks for legacy payment rails (ACH, SEPA, credit cards), production implementations without client-signed cryptographic authorizations remain unconfirmed as of mid-2026. X402 lacks native constructs for hierarchical, multi-agent budget partitioning; its wallet-based session mechanism (SIWx) provides reusable authorization, but not delegated offline sub-budgets.
 
 ## MPP (Machine Payments Protocol)
 
-Stripe/Tempo-backed, payment-method agnostic by design (stablecoins, cards via Shared Payment Tokens, BNPL). This is the first protocol in this landscape that genuinely supports fiat/card payment without a client-side wallet. Two payment intents exist: one-shot `charge` and pre-funded `session` (escrow + off-chain vouchers, avoiding per-call settlement) but sessions are, as of mid-2026, confirmed only on the crypto (Tempo) rail; the fiat/card path's support for the session model is unconfirmed. No native MoR: the merchant remains merchant of record by default (Stripe Managed Payments could change this, but no confirmed integration with MPP exists yet). No native sub-agent budget delegation.
+Backed by Stripe and Tempo Labs [MPP], designed to be payment-method agnostic (supporting stablecoins, credit cards via Shared Payment Tokens, and deferred billing). MPP provides a verified mechanism for card-based fiat settlement without client-side crypto wallets. It defines two payment intents: one-shot `charge` and pre-funded `session` (using off-chain vouchers to avoid per-call settlement). However, session support is currently confirmed only on crypto rails (Tempo). Crucially, MPP does not act as a Merchant of Record (the vendor remains liable for indirect taxation), nor does it provide cryptographic delegation primitives for agent swarms.
 
-## MoR-backed agent marketplaces (e.g. Google Cloud Marketplace + AP2)
+## MoR-Backed Marketplaces (e.g., Google Cloud Marketplace + AP2)
 
-Not a payment protocol in the same sense, a distribution platform. Google Cloud Marketplace contractually acts as Merchant of Record for third-party listings, and is positioned to compose with Google's Agent Payments Protocol (AP2) for agent-driven procurement. This is the closest existing match to "fiat, MoR-backed, agent-facing" but entitlement is governed at the level of the purchasing customer/account. Nothing found lets that customer further attenuate their entitlement into independent, revocable sub-budgets for their own agent swarm.
+Distribution platforms rather than open wire protocols. Google Cloud Marketplace acts contractually as Merchant of Record for third-party software, composing with the Agent Payments Protocol (AP2 [AP2]) for automated procurement. While this provides fiat billing with automated tax handling, entitlements are managed strictly at the buyer account boundary. It provides no mechanism for the purchaser to cryptographically attenuate that entitlement into autonomous, offline-verifiable sub-budgets for a downstream agent swarm.
 
 ## Summary
 
-| | No crypto required | Fiat / MoR-native | Agent-native flow | Granular sub-agent delegation |
+| Protocol / Platform | No Crypto Required | Fiat / MoR-Native | Agent-Native Flow | Granular Swarm Delegation |
 |---|---|---|---|---|
-| L402 | ❌ | ❌ | ✅ | ✅ (via macaroons) |
-| X402 | ❌ (fiat path unconfirmed) | ❌ | ✅ | ❌ |
-| MPP | ✅ (charge only, confirmed) | ❌ (MoR unconfirmed) | ✅ | ❌ |
-| MoR marketplaces (GCM + AP2) | ✅ | ✅ | ✅ | ❌ |
-| **This whitepaper** | ✅ | ✅ | ❌ (Payment happens once, upfront) | ✅ (via biscuits)|
+| **L402** [L402] | ❌ | ❌ | ✅ | ✅ (via Macaroons [BIRGISSON2014]) |
+| **X402** [X402] | ❌ (fiat unconfirmed) | ❌ | ✅ | ❌ |
+| **MPP** [MPP] | ✅ (charge mode) | ❌ | ✅ | ❌ |
+| **MoR Marketplaces (GCM + AP2)** [AP2] | ✅ | ✅ | ✅ | ❌ |
+| **This Proposal** | ✅ | ✅ | ❌ (Settled once upfront) | ✅ (via Biscuits [COUPRIE2021]) |
 
 No existing option checks every column at once. L402 has the delegation mechanism this whitepaper borrows from, but on the wrong settlement rail for the target audience. Everything fiat/MoR-capable stops at the level of a single purchasing entity, without a way to further delegate that budget down into an agent swarm. That gap is the whitepaper's actual scope, not a claim that M2M payments or MoR-backed monetization don't exist yet, both clearly do.
 

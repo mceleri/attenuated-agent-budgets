@@ -12,17 +12,20 @@ This is a niche exploration, not a claim to revolutionize agent payments. It's b
 
 ## Status
 
-🚧 Early stage. Structure is in place, most sections are still TODOs. Follow along via commits/releases rather than expecting a finished document any time soon. 
+🚧 Active specification and reference implementation. The architectural model, wire protocol, legal analysis, open problems, and an executable reference implementation in Python are in place. Follow along via commits and releases. 
 
 ## Contents
 
 | File | Description |
 |---|---|
 | [`00-abstract.md`](./00-abstract.md) | Abstract and problem framing |
-| [`01-landscape.md`](./01-landscape.md) | Comparative landscape of M2M payment/discovery protocols as of mid-2026 (L402, X402, MPP, MoR platforms) |
-| [`02-architecture.md`](./02-architecture.md) | Biscuits architecture: issuance, attenuation, sub-budget delegation |
-| [`03-open-problems.md`](./03-open-problems.md) | Explicit list of unresolved issues (server-side state, revocation, MoR/protocol integration gaps) |
-| [`examples/`](./examples/) | Minimal code examples illustrating the concepts (mock issuance, attenuation, verification) |
+| [`01-landscape.md`](./01-landscape.md) | Comparative landscape of M2M payment and discovery protocols (L402, X402, MPP, MoR platforms) |
+| [`02-architecture.md`](./02-architecture.md) | Biscuit authorization architecture, Datalog semantics, sealing, and state delegation |
+| [`03-wire-protocol.md`](./03-wire-protocol.md) | X402 wire protocol, JSON Schemas, HTTP status code matrix, and concrete wire exchange traces |
+| [`04-tax-and-legal.md`](./04-tax-and-legal.md) | Legal disclaimer, EU Voucher Directive analysis (SPV vs. MPV), and tax neutrality |
+| [`05-open-problems.md`](./05-open-problems.md) | Technical limitations, concurrency bottlenecks, edge synchronization, and open questions |
+| [`06-references.md`](./06-references.md) | Academic, industry standard, and statutory references |
+| [`examples/`](./examples/) | Minimal runnable reference implementation (issuance, offline attenuation, hold/capture, verification) |
 
 ## Why open, incremental, and public
 

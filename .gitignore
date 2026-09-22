@@ -1,2 +1,6 @@
 .idea
 *.iml
+ROADMAP.md
+roadmap.md
+__pycache__/
+*.py[cod]

@@ -1,0 +1,105 @@
+# Open Problems and Architectural Trade-offs
+
+This section documents the technical limitations, concurrency bottlenecks, security trade-offs, and open research questions inherent to the attenuated Biscuit budget architecture.
+
+## 1. Concurrency Bottlenecks and Ledger Contention
+
+### 1.1 The Single-Row Serialization Bottleneck
+While Biscuit signature verification and Datalog policy checks execute statelessly in memory ($O(1)$ cryptographic operations), cumulative budget deduction requires a stateful write to a persistent ledger. In a relational database, concurrent transactions debiting against the same `checkout_id` must acquire a row-level exclusive lock:
+
+```sql
+SELECT available_balance FROM checkouts WHERE checkout_id = $1 FOR UPDATE;
+```
+
+When an orchestrator dispatches hundreds of sub-agents concurrently, this row becomes a serialization point. Transaction latency increases linearly with swarm concurrency, leading to database lock contention, increased connection pool wait times, and potential deadlock or lock timeout errors.
+
+### 1.2 Mitigation Strategies and Trade-offs
+Several architectures mitigate this contention, each introducing distinct trade-offs:
+
+1. **Optimistic Concurrency Control (OCC):**
+   Transactions read the version counter of the checkout record and attempt an atomic conditional update (`UPDATE checkouts SET balance = balance - :cost, version = version + 1 WHERE checkout_id = :id AND version = :version`). Under high write contention, retry amplification degrades throughput significantly.
+2. **Pre-allocated Sub-pools (Partitioned Balances):**
+   The orchestrator partitions the parent budget into isolated sub-allocations on the server (`checkout_id_sub1`, `checkout_id_sub2`), allowing concurrent writes against distinct database rows. However, this re-introduces the liquidity fragmentation problem that dynamic delegation seeks to eliminate.
+3. **In-Memory Ledger with Asynchronous Persistence:**
+   Atomic counters managed in an in-memory datastore (e.g., Redis using Lua scripts or Redis transactions) decouple real-time authorization from durable disk writes. While this yields sub-millisecond debit latencies ($>50,000\text{ ops/sec}$), catastrophic server failure before write-back to durable storage can cause balance drift.
+
+## 2. Edge Verification versus Centralized State Synchronization
+
+### 2.1 The Stateless vs. Stateful Tension
+Biscuit tokens are fundamentally designed for distributed, decentralized authorization where edge nodes evaluate claims without centralized database lookups. Conversely, economic budget enforcement is inherently stateful.
+
+A purely edge-computed model can verify:
+- Whether the token signature is valid under $PK_{root}$.
+- Whether the ambient endpoint matches the whitelist.
+- Whether the per-request cost does not exceed the ceiling ($\text{cost} \le c_{\max}$).
+- Whether the request timestamp falls within $[t_{start}, t_{expiry}]$.
+
+However, an edge node cannot determine:
+- Whether the cumulative spending across all sub-agents has exceeded the initial fiat allocation.
+- Whether the token was revoked out-of-band following an orchestrator request or MoR fraud notification.
+
+### 2.2 Revocation Propagation Latency
+When an orchestrator issues a surgical revocation (`POST /v1/budgets/revoke`), the server writes the target block's `revocation_id` to its local revocation store. In a geographically distributed edge deployment:
+- Edge nodes maintaining local caches (e.g., Bloom filters or local key-value stores) experience a replication lag $\Delta t$.
+- During $\Delta t$, a compromised or rogue sub-agent can continue consuming compute resources against edge nodes that have not yet received the cache invalidation.
+- Requiring synchronous edge-to-origin queries for every invocation eliminates the latency benefits of edge computing, reducing the edge tier to a simple TLS-terminating proxy.
+
+## 3. Two-Phase Dynamic Metering and Orphaned Holds
+
+### 3.1 Failure Modes in Dynamic Pricing
+Generative AI and streaming execution require a two-phase protocol: reserving a pessimistic upper bound (`max_hold_amount`) before processing begins, followed by settling the actual metered cost upon completion. This introduces specific distributed system failure modes:
+
+1. **Worker Crashes During Execution:**
+   If the compute worker crashes mid-stream or the client drops the HTTP connection after 80% of tokens are generated, the active hold remains uncommitted.
+2. **Network Partitions on Settle:**
+   If the internal capture request between the API gateway and the billing ledger times out, the system cannot verify whether the compute was delivered or whether the hold should be released.
+
+### 3.2 Lease-Based Hold Management
+To prevent permanent liquidity locking from orphaned holds, holds must operate under a time-to-live (TTL) lease:
+
+$$\text{hold\_lease} = \min(t_{\text{request}} + \text{TTL}_{\max}, t_{\text{token\_expiry}})$$
+
+- If no capture or renewal is received prior to lease expiration, an automated background reaper releases the held funds back to `available_balance`.
+- **Race Condition:** If a slow worker completes execution and attempts to capture a hold *after* the reaper has expired it and the orchestrator has reallocated the balance to another sub-agent, the capture fails, forcing the provider to absorb unbilled compute costs.
+
+## 4. Merchant of Record Chargeback Exposure vs. Irreversible Compute
+
+### 4.1 Temporal Asymmetry of Settlement
+The integration of traditional payment rails (credit cards, SEPA direct debit) with autonomous API consumption creates an asymmetric risk profile:
+
+| Dimension | MoR Fiat Settlement | Compute Consumption |
+|---|---|---|
+| **Finality** | Reversible (60–180 day dispute window) | Irreversible (milliseconds) |
+| **Dispute Mechanism** | Issuer chargeback (friendly fraud, stolen card) | None |
+| **Marginal Cost** | Payment processing fees ($~1.5\% - 3\%$) | Electricity, GPU time, hardware amortization |
+
+When a bad actor uses a stolen payment credential to purchase a €500 budget and distributes hundreds of sub-agents to exhaust the compute within minutes, the provider faces a total loss when the cardholder initiates a chargeback weeks later. The provider forfeits both the fiat payout and the unrecoverable compute expenditure.
+
+### 4.2 Mitigation Strategies
+Providers deploying this architecture must implement operational risk controls:
+- **Velocity Limits:** Restrict the maximum burn rate (€/minute) for newly registered accounts or untrusted IP ranges.
+- **Progressive Escrow Release:** Withhold large budget authorizations until payment processing reaches higher settlement certainty tiers (e.g., SEPA clearing completion or 3-D Secure authentication).
+- **Fraud Scoring Integration:** Tie initial token issuance to real-time risk scores provided by the MoR (e.g., Stripe Radar score) before minting Master Tokens.
+
+## 5. Scalability Limits of Vertical Consortium Attenuation
+
+### 5.1 Absence of Cross-Provider Rebalancing
+As formalized in §6.3.2 of the Architecture specification, multi-provider consortia avoid distributed transactions by employing vertical partitioning: the orchestrator attenuates sub-tokens with rigid endpoint constraints and disjoint sub-budgets.
+
+While this eliminates cross-provider consensus protocols (e.g., Two-Phase Commit or Raft-based ledgers), it introduces operational rigidity:
+- If Provider 2 exhausts its €2.00 allocation while Provider 1 retains €8.00 unspent, Provider 2 cannot unilaterally rebalance or draw from Provider 1's excess.
+- Dynamic rebalancing requires either:
+  1. An explicit out-of-band API call from the client to Provider 1 to issue a new attenuated token for Provider 2.
+  2. A bilateral clearing protocol between Provider 1 and Provider 2, which re-introduces distributed ledger complexity and counterparty credit risk.
+
+## 6. Cryptographic Proof of Possession in Constrained Agent Runtimes
+
+### 6.1 Runtime Constraints
+Binding Biscuit tokens to client keypairs via Proof of Possession (PoP / DPoP) mitigates bearer token theft. However, autonomous sub-agents frequently execute within constrained environments:
+- Sandboxed WebAssembly (WASM) micro-runtimes.
+- Restricted Model Context Protocol (MCP) tool execution processes.
+- Ephemeral serverless containers.
+
+In these environments, generating, storing, and accessing private keys securely (e.g., avoiding exposure in memory dumps or tool execution logs) presents operational complexity:
+1. **Key Extraction Risk:** If an LLM agent has arbitrary tool-execution capabilities, a prompt injection attack could instruct the agent to inspect its local filesystem or environment variables and exfiltrate the private key.
+2. **Computational Overhead:** Generating Ed25519 or ECDSA signatures for every high-frequency micro-invocation introduces non-trivial CPU overhead in high-throughput data processing pipelines compared to standard bearer token transmission over mTLS.
