@@ -1,10 +1,10 @@
 # Wire Protocol & X402 Extension Specification
 
-This document specifies the HTTP wire protocol for **Attenuated Agent Budgets** by extending the X402 (v2) standard [X402] with the `mor-fiat` scheme. It details headers, JSON schemas, status codes, and concrete exchange flows.
+This document specifies the HTTP wire protocol for **Attenuated Agent Budgets** by extending the X402 (v2) standard ([X402](https://github.com/x402-foundation/x402)) with the `mor-fiat` scheme. It details headers, JSON schemas, status codes, and concrete exchange flows.
 
 ## 1. Protocol Architecture & Header Envelopes
 
-The protocol reuses the core challenge-response semantics of X402 v2 [X402] and HTTP status codes defined in RFC 9110 [RFC9110]. All control messages transmitted over HTTP headers are **Base64-encoded JSON**:
+The protocol reuses the core challenge-response semantics of X402 v2 ([X402](https://github.com/x402-foundation/x402)) and HTTP status codes defined in [RFC 9110](https://doi.org/10.17487/RFC9110). All control messages transmitted over HTTP headers are **Base64-encoded JSON**:
 
 | Header | Origin | Payload Type | Semantic Role |
 |---|---|---|---|
@@ -125,16 +125,16 @@ When calling protected endpoints, the client encapsulates the attenuated Biscuit
 - `scheme`: Must be `"mor-fiat"`.
 - `payload.token`: Base64 binary serialization of the Biscuit token. Tokens must be sealed prior to client dispatch.
 - `payload.sub_agent_id`: Identifier used by the ledger to correlate cumulative sub-agent quotas.
-- `extensions`: Optional bag for Proof of Possession (PoP) parameters [RFC9449] and telemetry.
+- `extensions`: Optional bag for Proof of Possession (PoP) parameters ([RFC 9449](https://doi.org/10.17487/RFC9449)) and telemetry.
 
 ## 4. HTTP Status Codes & Error Response Matrix
 
-The protocol establishes explicit mappings between validation outcomes, HTTP status codes [RFC9110], and response headers:
+The protocol establishes explicit mappings between validation outcomes, HTTP status codes ([RFC 9110](https://doi.org/10.17487/RFC9110)), and response headers:
 
 | Status Code | Condition | Primary Header | `errorReason` | Error Body `error` |
 |---|---|---|---|---|
 | `402 Payment Required` | Unauthenticated call (challenge) | `PAYMENT-REQUIRED` | N/A | `payment_required` |
-| `402 Payment Required` | Valid token, but ledger balance is zero | `PAYMENT-REQUIRED` + `PAYMENT-RESPONSE` | `budget_exhausted` | `budget_exhausted` |
+| `402 Payment Required` | Valid token, but ledger balance is exhausted or insufficient for request cost / hold reservation | `PAYMENT-REQUIRED` + `PAYMENT-RESPONSE` | `budget_exhausted` | `budget_exhausted` |
 | `401 Unauthorized` | Invalid cryptographic signature / unknown root | `PAYMENT-RESPONSE` | `invalid_token_signature` | `invalid_token_signature` |
 | `403 Forbidden` | Datalog caveat evaluation failure (e.g. endpoint mismatch) | `PAYMENT-RESPONSE` | `policy_check_failed` | `policy_check_failed` |
 | `410 Gone` | Token or block identifier is on the Revocation List | `PAYMENT-RESPONSE` | `token_revoked` | `token_revoked` |
@@ -142,24 +142,34 @@ The protocol establishes explicit mappings between validation outcomes, HTTP sta
 
 ## 5. End-to-End Protocol Exchange Flows
 
+To ground the wire specifications in a realistic operational context, the exchange flows below use a running scenario based on an API Provider exposing two complementary services:
+1. **Document OCR Extraction Service (`POST /v1/ocr`)**: A fixed-cost service charging €0.05 per processed document. Because OCR tasks process document data or image references, requests always send a JSON payload in the request body.
+2. **Generative LLM Analysis Service (`POST /v1/chat/completions`)**: A variable-cost streaming service that processes prompt contexts and settles dynamically using the Two-Phase Hold/Capture pattern.
+
 ### 5.1 Flow 1: Initial Discovery & 402 Challenge
 
-An unprovisioned client requests a protected resource without payment credentials.
+An unprovisioned client submits a document for OCR extraction without payment credentials.
 
 ```mermaid
 sequenceDiagram
     participant C as Client / Orchestrator
     participant P as Provider Endpoint
 
-    C->>P: GET /v1/ocr HTTP/1.1 (No credentials)
+    C->>P: POST /v1/ocr HTTP/1.1 (Payload provided, no credentials)
     P-->>C: 402 Payment Required (PAYMENT-REQUIRED: MorFiatPaymentRequirements)
 ```
 
 #### Request
 ```http
-GET /v1/ocr HTTP/1.1
+POST /v1/ocr HTTP/1.1
 Host: api.provider.example
+Content-Type: application/json
 Accept: application/json
+
+{
+  "image_url": "https://data.example/invoice_scan_01.png",
+  "language": "en"
+}
 ```
 
 #### Response
@@ -400,7 +410,13 @@ If a token violates an embedded Datalog caveat (e.g. attempting to access `/v1/a
 ```http
 POST /v1/admin/purge HTTP/1.1
 Host: api.provider.example
+Content-Type: application/json
 PAYMENT-SIGNATURE: eyJ4NDAyVmVyc2lvbiI6Miwic2NoZW1lIjoibW9yLWZpYXQiLCJwYXlsb2FkIjp7InRva2VuIjoiQ2xBQ0VpMEdDaXFnZFhSc2FYTmxjeXdn...
+
+{
+  "target": "cache",
+  "force": true
+}
 ```
 
 #### Response
