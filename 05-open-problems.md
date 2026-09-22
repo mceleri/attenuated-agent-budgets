@@ -23,26 +23,21 @@ Several architectures mitigate this contention, each introducing distinct trade-
 3. **In-Memory Ledger with Asynchronous Persistence:**
    Atomic counters managed in an in-memory datastore (e.g., Redis using Lua scripts or Redis transactions) decouple real-time authorization from durable disk writes. While this yields sub-millisecond debit latencies ($>50,000\text{ ops/sec}$), catastrophic server failure before write-back to durable storage can cause balance drift.
 
-## 2. Edge Verification versus Centralized State Synchronization
+## 2. Stateless Cryptographic Verification versus Stateful Budget Tracking
 
-### 2.1 The Stateless vs. Stateful Tension
-Biscuit tokens are fundamentally designed for distributed, decentralized authorization where edge nodes evaluate claims without centralized database lookups. Conversely, economic budget enforcement is inherently stateful.
+Biscuit tokens are fundamentally designed for distributed, decentralized authorization where verifying endpoints evaluate claims statelessly without querying a central authority. Conversely, economic budget enforcement is inherently stateful.
 
-A purely edge-computed model can verify:
+A purely stateless, in-memory evaluation can verify:
 - Whether the token signature is valid under $PK_{root}$.
 - Whether the ambient endpoint matches the whitelist.
 - Whether the per-request cost does not exceed the ceiling ($\text{cost} \le c_{\max}$).
-- Whether the request timestamp falls within $[t_{start}, t_{expiry}]$.
+- Whether the request timestamp falls within $[t_{\text{start}}, t_{\text{expiry}}]$.
 
-However, an edge node cannot determine:
-- Whether the cumulative spending across all sub-agents has exceeded the initial fiat allocation.
-- Whether the token was revoked out-of-band following an orchestrator request or MoR fraud notification.
+However, stateless cryptographic checks cannot determine:
+- Whether the cumulative spending across all distributed sub-agents has exceeded the initial fiat allocation.
+- Whether an individual token block was revoked out-of-band following an orchestrator request or an upstream MoR dispute notification.
 
-### 2.2 Revocation Propagation Latency
-When an orchestrator issues a surgical revocation (`POST /v1/budgets/revoke`), the server writes the target block's `revocation_id` to its local revocation store. In a geographically distributed edge deployment:
-- Edge nodes maintaining local caches (e.g., Bloom filters or local key-value stores) experience a replication lag $\Delta t$.
-- During $\Delta t$, a compromised or rogue sub-agent can continue consuming compute resources against edge nodes that have not yet received the cache invalidation.
-- Requiring synchronous edge-to-origin queries for every invocation eliminates the latency benefits of edge computing, reducing the edge tier to a simple TLS-terminating proxy.
+Enforcing cumulative sub-budgets and revocations therefore reintroduces a dependency on a centralized datastore (such as a local PostgreSQL instance or Redis key). For the target demographic of freelancers and SMEs operating within a centralized or single-region environment, this state dependency is operationally modest: revocation checks and balance debits execute concurrently within a single local transaction or in-memory key lookup. However, it precludes deploying purely autonomous edge verification without an origin database round-trip.
 
 ## 3. Two-Phase Dynamic Metering and Orphaned Holds
 
@@ -57,7 +52,7 @@ Generative AI and streaming execution require a two-phase protocol: reserving a 
 ### 3.2 Lease-Based Hold Management
 To prevent permanent liquidity locking from orphaned holds, holds must operate under a time-to-live (TTL) lease:
 
-$$\text{hold\_lease} = \min(t_{\text{request}} + \text{TTL}_{\max}, t_{\text{token\_expiry}})$$
+$$t_{\text{lease}} = \min(t_{\text{request}} + \text{TTL}_{\max}, t_{\text{expiry}})$$
 
 - If no capture or renewal is received prior to lease expiration, an automated background reaper releases the held funds back to `available_balance`.
 - **Race Condition:** If a slow worker completes execution and attempts to capture a hold *after* the reaper has expired it and the orchestrator has reallocated the balance to another sub-agent, the capture fails, forcing the provider to absorb unbilled compute costs.
@@ -71,7 +66,7 @@ The integration of traditional payment rails (credit cards, SEPA direct debit) w
 |---|---|---|
 | **Finality** | Reversible (60–180 day dispute window) | Irreversible (milliseconds) |
 | **Dispute Mechanism** | Issuer chargeback (friendly fraud, stolen card) | None |
-| **Marginal Cost** | Payment processing fees ($~1.5\% - 3\%$) | Electricity, GPU time, hardware amortization |
+| **Marginal Cost** | Payment processing fees (~1.5% - 3% + fixed fee) | Electricity, GPU compute, hardware amortization |
 
 When a bad actor uses a stolen payment credential to purchase a €500 budget and distributes hundreds of sub-agents to exhaust the compute within minutes, the provider faces a total loss when the cardholder initiates a chargeback weeks later. The provider forfeits both the fiat payout and the unrecoverable compute expenditure.
 
@@ -84,7 +79,7 @@ Providers deploying this architecture must implement operational risk controls:
 ## 5. Scalability Limits of Vertical Consortium Attenuation
 
 ### 5.1 Absence of Cross-Provider Rebalancing
-As formalized in §6.3.2 of the Architecture specification, multi-provider consortia avoid distributed transactions by employing vertical partitioning: the orchestrator attenuates sub-tokens with rigid endpoint constraints and disjoint sub-budgets.
+As formalized in [Section 6.3 of the Architecture specification](./02-architecture.md#63-architectural-scope-sme-model--vertical-partitioning), multi-provider consortia avoid distributed transactions by employing vertical partitioning: the orchestrator attenuates sub-tokens with rigid endpoint constraints and disjoint sub-budgets.
 
 While this eliminates cross-provider consensus protocols (e.g., Two-Phase Commit or Raft-based ledgers), it introduces operational rigidity:
 - If Provider 2 exhausts its €2.00 allocation while Provider 1 retains €8.00 unspent, Provider 2 cannot unilaterally rebalance or draw from Provider 1's excess.
