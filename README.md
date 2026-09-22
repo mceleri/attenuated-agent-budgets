@@ -1,18 +1,20 @@
 # Attenuated Agent Budgets
 
-Exploring cryptographic budget delegation (biscuits) for multi-agent M2M payments. 🚧 Work in progress. 🚧
+Cryptographic budget delegation (Biscuits) for multi-agent M2M payments via Merchant of Record fiat settlement.
 
-## What this is
+## Overview
 
-A whitepaper-in-progress exploring how a single, fiat-settled payment (via a Merchant of Record) can be turned into a granular, revocable, offline-attenuable budget for a swarm of autonomous sub-agents, without requiring cryptocurrency, wallets, or per-transaction settlement.
+This repository documents a specification and reference architecture exploring how a single, fiat-settled payment (via a Merchant of Record) can be turned into a granular, revocable, offline-attenuable budget for a swarm of autonomous sub-agents, without requiring cryptocurrency, wallets, or per-transaction settlement.
 
-The starting observation: current M2M payment protocols (L402, X402, MPP) either assume crypto-native settlement or per-request autonomous payment, both of which are impractical for freelancers and SMEs operating under many tax regimes, where every crypto-denominated microtransaction could become a taxable disposal event. This project explores what happens once you accept that constraint and ask: how do you still give an agent swarm fine-grained, independently revocable spending control over a budget that was paid for as a single transaction via a Merchant of Record?
+### The Problem
 
-This is a niche exploration, not a claim to revolutionize agent payments. It's being built and written in the open, incrementally, with open problems tracked explicitly rather than hidden.
+Current M2M payment protocols (such as L402, X402, and MPP) generally assume crypto-native settlement or autonomous per-request payments. Both models present severe tax and accounting barriers for freelancers and SMEs under European tax regimes, where every crypto-denominated microtransaction risks triggering a taxable disposal event with heavy reporting overhead.
+
+This project addresses those constraints directly: how to provide an autonomous agent swarm with fine-grained, independently revocable spending authorization over a budget provisioned through standard fiat payment rails.
 
 ## Status
 
-🚧 Active specification and reference implementation. The architectural model, wire protocol, legal analysis, open problems, and an executable reference implementation in Python are in place. Follow along via commits and releases. 
+Active specification and reference implementation. The core cryptographic architecture, X402 wire protocol, EU tax analysis (SPV classification), open problems, and an executable reference implementation in Python are complete.
 
 ## Contents
 
@@ -27,16 +29,22 @@ This is a niche exploration, not a claim to revolutionize agent payments. It's b
 | [`06-references.md`](./06-references.md) | Academic, industry standard, and statutory references |
 | [`examples/`](./examples/) | Minimal runnable reference implementation (issuance, offline attenuation, hold/capture, verification) |
 
-## Why open, incremental, and public
+### Running the Reference Demo
 
-This repo is being developed in public on purpose: to get early feedback, to document the reasoning behind design changes (including reversals), and to keep a honest, versioned record of what's solved versus what's still an open problem. Tags mark meaningful milestones (`v0.1-abstract`, `v0.2-architecture`, ...).
+A self-contained Python reference implementation demonstrating all protocol phases (issuance, offline attenuation, fixed-cost calls, dynamic two-phase hold/capture, budget top-up, and surgical revocation) is available in `examples/`:
+
+```bash
+cd examples
+pip install -r requirements.txt
+python3 demo.py
+```
 
 ## License
 
 This repository uses a dual license:
-- **Text and documentation** (the whitepaper itself): [CC-BY-4.0](./LICENSE) reuse and adaptation welcome, with attribution.
-- **Code examples** (`examples/`): [MIT](./examples/LICENSE) use freely.
+- **Text and documentation**: [CC-BY-4.0](./LICENSE)
+- **Code examples**: [MIT](./examples/LICENSE)
 
 ## Get in touch
 
-If you're working on similar problems (agent payments, budget delegation, or M2M infrastructure more broadly) I'd like to hear from you. Open an issue, or find me on [LinkedIn](https://www.linkedin.com/in/marco-celeri-61730b55).
+If you are working on agent payments, budget delegation, or M2M infrastructure, feel free to open an issue or connect on [LinkedIn](https://www.linkedin.com/in/marco-celeri-61730b55).
