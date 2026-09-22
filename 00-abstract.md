@@ -13,7 +13,7 @@ Meeting these constraints requires decoupling upfront financial settlement from 
 A primary orchestrator agent attenuates the Master Biscuit offline into bounded sub-budgets, distributing them to autonomous sub-agents without further interaction with the issuer. This approach involves deliberate architectural trade-offs:
 - Verifying endpoints must maintain state to enforce cumulative spend across distributed agents, as Datalog caveats alone cannot enforce global ceilings without state tracking.
 - Revocation must be supported explicitly for upstream MoR dispute/refund events and downstream agent containment.
-- Public keys must be configured across all participating verification endpoints.
+- Provider-side verification services (and any consortium partner gateways) must configure the issuer's root public key, whereas clients and orchestrators require zero key management to attenuate and spend tokens.
 
 Enterprise platforms (such as Google Cloud Marketplace composing with AP2 [AP2]) govern entitlement at the customer account boundary. However, as of mid-2026, existing platforms lack mechanisms for a customer to attenuate that entitlement offline into independently verifiable, revocable sub-budgets for an autonomous agent swarm. This whitepaper formalizes that delegation layer.
 This is the narrower gap addressed here: not the complete absence of MoR-backed M2M monetization, but the absence of granular, offline-attenuable delegation once such a budget has already been acquired without using a blockchain.

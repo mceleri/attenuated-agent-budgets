@@ -23,7 +23,7 @@ Verifying endpoints across a distributed or multi-service architecture must vali
 ### 2.1 Contrast with HMAC Macaroons
 Classic Macaroons [BIRGISSON2014] (as deployed in L402 [L402]) rely on symmetric HMAC chains. Under that design, verifying a token requires the root secret key. Consequently, every verifying endpoint within a provider's infrastructure must either hold the root secret—expanding the compromise blast radius—or query the issuing service synchronously.
 
-In contrast, Biscuit uses asymmetric public-key cryptography. The Provider signs the root block with a private key ($SK_{root}$), and verifying endpoints validate the delegation chain using only the public key ($PK_{root}$). Offline attenuation remains cryptographically guaranteed: downstream holders can append restrictive blocks without knowledge of the private signing keys.
+In contrast, Biscuit uses asymmetric public-key cryptography. The Provider signs the root block with a private key ($SK_{root}$), and verifying endpoints (resource servers/gateways) validate the delegation chain using only the public key ($PK_{root}$). Offline attenuation remains cryptographically guaranteed: downstream holders (clients and orchestrators) can append restrictive blocks without knowledge of the private signing keys and without needing to configure or manage public key registries.
 
 ### 2.2 Ephemeral Key Chains
 Biscuit chains blocks via internal ephemeral keypairs:
