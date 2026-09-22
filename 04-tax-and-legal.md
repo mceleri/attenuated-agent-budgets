@@ -6,7 +6,7 @@ The author is a software engineer and researcher, not an attorney, certified pub
 
 ## 2. The Crypto Microtransaction Impasse in European Tax Law
 
-Machine-to-Machine (M2M) payment protocols such as L402 [L402] and X402 [X402] (in its on-chain crypto form) operate on the premise that autonomous agents can settle payments per-call using cryptocurrency or stablecoins (e.g., USDC).
+Machine-to-Machine (M2M) payment protocols such as [L402](https://github.com/lightninglabs/L402) and [X402](https://github.com/x402-foundation/x402) (in its on-chain crypto form) operate on the premise that autonomous agents can settle payments per-call using cryptocurrency or stablecoins (e.g., USDC).
 
 For freelancers and small-to-medium enterprises (SMEs) operating within several European jurisdictions (notably Italy under recent crypto-asset tax reforms, and Spain), this premise introduces an administrative and tax obstacle:
 - **Taxable Disposal Events**: Tax authorities classify transfers or payments made with digital assets as taxable disposal events (*cessione a titolo oneroso*).
@@ -19,7 +19,7 @@ For an independent developer or small enterprise, autonomous crypto micro-billin
 
 To reconcile pay-per-use agent autonomy with statutory tax compliance, this whitepaper models the Master Biscuit token as an **electronic voucher** under harmonized European Union law.
 
-Council Directive (EU) 2016/1065 [DIRECTIVE2016_1065] (amending the EU VAT Directive 2006/112/EC [DIRECTIVE2006_112]) provides a unified legal framework for vouchers across all EU member states. Under Article 30a:
+[Council Directive (EU) 2016/1065](https://eur-lex.europa.eu/eli/dir/2016/1065/oj) (amending the EU VAT Directive [2006/112/EC](https://eur-lex.europa.eu/eli/dir/2006/112/oj)) provides a unified legal framework for vouchers across all EU member states. Under Article 30a:
 > *"‘voucher’ means an instrument where there is an obligation to accept it as consideration or part consideration for a supply of goods or services and where the goods or services to be supplied or the identities of their potential suppliers are either indicated on the instrument itself or in related documentation, including the terms and conditions of use of such instrument."*
 
 A Master Biscuit issued upon MoR settlement maps directly to this statutory definition: it is an electronic bearer credential embodying the right to receive digital computing/API services up to the prepaid monetary ceiling from defined endpoint providers.

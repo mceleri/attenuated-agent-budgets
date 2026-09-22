@@ -18,10 +18,10 @@ flowchart LR
 
 ## 2. Cryptographic Primitive: Biscuit Tokens
 
-Verifying endpoints across a distributed or multi-service architecture must validate access credentials without circular dependencies on a central issuing key. This architecture adopts **Biscuit tokens** [COUPRIE2021], a decentralized authorization scheme based on public-key signatures and Datalog policies.
+Verifying endpoints across a distributed or multi-service architecture must validate access credentials without circular dependencies on a central issuing key. This architecture adopts **[Biscuit tokens](https://www.biscuitsec.org/)**, a decentralized authorization scheme based on public-key signatures and Datalog policies.
 
 ### 2.1 Contrast with HMAC Macaroons
-Classic Macaroons [BIRGISSON2014] (as deployed in L402 [L402]) rely on symmetric HMAC chains. Under that design, verifying a token requires the root secret key. Consequently, every verifying endpoint within a provider's infrastructure must either hold the root secret—expanding the compromise blast radius—or query the issuing service synchronously.
+Classic [Macaroons](https://doi.org/10.14722/ndss.2014.23212) (as deployed in [L402](https://github.com/lightninglabs/L402)) rely on symmetric HMAC chains. Under that design, verifying a token requires the root secret key. Consequently, every verifying endpoint within a provider's infrastructure must either hold the root secret—expanding the compromise blast radius—or query the issuing service synchronously.
 
 In contrast, Biscuit uses asymmetric public-key cryptography. The Provider signs the root block with a private key ($SK_{root}$), and verifying endpoints (resource servers/gateways) validate the delegation chain using only the public key ($PK_{root}$). Offline attenuation remains cryptographically guaranteed: downstream holders (clients and orchestrators) can append restrictive blocks without knowledge of the private signing keys and without needing to configure or manage public key registries.
 
@@ -86,7 +86,7 @@ To enforce cumulative sub-budgets across an agent swarm:
 An unsealed Biscuit contains the active ephemeral private key $SK_N$, permitting further block additions. Before delegating a token to an untrusted or sandboxed sub-agent, the Orchestrator **seals** the token by stripping $SK_N$. Without $SK_N$, appending further blocks is mathematically impossible, while verification remains intact.
 
 ### 4.2 Proof of Possession (PoP)
-By default, sealed Biscuits are bearer credentials: possession of the token string allows spending from the associated ledger account. In environments with untrusted intermediaries or tools, the Orchestrator binds the token to the sub-agent's asymmetric keypair ($SK_{sub}, PK_{sub}$) using Proof of Possession principles [RFC9449]:
+By default, sealed Biscuits are bearer credentials: possession of the token string allows spending from the associated ledger account. In environments with untrusted intermediaries or tools, the Orchestrator binds the token to the sub-agent's asymmetric keypair ($SK_{sub}, PK_{sub}$) using Proof of Possession principles ([RFC 9449](https://doi.org/10.17487/RFC9449)):
 1. **Binding Caveat**: Orchestrator embeds the sub-agent public key:
    ```datalog
    check if ambient::caller_pk($pk), $pk == "hex_encoded_pk_sub";

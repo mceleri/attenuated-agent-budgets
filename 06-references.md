@@ -12,11 +12,11 @@
 
 6. [MPP] Stripe & Tempo Labs. (2025). *Machine Payments Protocol (MPP) Specification*. https://mpp.dev
 
-7. [AP2] Google Cloud. (2025). *Agent Payments Protocol (AP2) and Autonomous Procurement Architecture*. Google Cloud Architecture Center.
+7. [AP2] Google. (2025). *Agent Payments Protocol (AP2)*. Technical specification and architecture. https://github.com/google-agentic-commerce/AP2
 
-8. [DIRECTIVE2016_1065] Council of the European Union. (2016). *Council Directive (EU) 2016/1065 of 27 June 2016 amending Directive 2006/112/EC as regards the treatment of vouchers*. Official Journal of the European Union, L 177/9.
+8. [DIRECTIVE2016_1065] Council of the European Union. (2016). *Council Directive (EU) 2016/1065 of 27 June 2016 amending Directive 2006/112/EC as regards the treatment of vouchers*. Official Journal of the European Union, L 177/9. https://eur-lex.europa.eu/eli/dir/2016/1065/oj
 
-9. [DIRECTIVE2006_112] Council of the European Union. (2006). *Council Directive 2006/112/EC of 28 November 2006 on the common system of value added tax*. Official Journal of the European Union, L 347/1.
+9. [DIRECTIVE2006_112] Council of the European Union. (2006). *Council Directive 2006/112/EC of 28 November 2006 on the common system of value added tax*. Official Journal of the European Union, L 347/1. https://eur-lex.europa.eu/eli/dir/2006/112/oj
 
 10. [RFC9110] Fielding, R., Nottingham, M., & Reschke, J. (2022). *HTTP Semantics*. RFC 9110. Internet Engineering Task Force (IETF). https://doi.org/10.17487/RFC9110
 
