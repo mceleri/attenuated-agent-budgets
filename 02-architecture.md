@@ -3,8 +3,8 @@
 ## 1. Actors
 
 - **Merchant of Record (MoR)**: Processes the upfront fiat payment, manages tax and indirect VAT/sales compliance, and settles funds to the Provider. The MoR operates outside the M2M protocol itself.
-- **Provider**: Exposes one or more M2M services. Generates and holds the private root signing keypair ($SK_{root}, PK_{root}$). Verifying endpoints evaluate tokens using $PK_{root}$.
-- **Orchestrator**: Client-side primary agent that initiates payment (or acts on behalf of a human principal) and receives the Master Token.
+- **Provider**: Exposes one or more M2M services. Holds and manages the private root signing key ($SK_{root}$) and distributes its corresponding public key ($PK_{root}$) to verifying endpoints (resource servers/gateways).
+- **Orchestrator**: Client-side coordinator agent. It may trigger or surface an initial 402 Payment Required challenge to the human user. Once the human user completes the fiat payment with the MoR, the Orchestrator receives the provisioned Master Token, attenuates it offline into restricted sub-budgets, and distributes them to downstream worker agents.
 - **Sub-Agents**: Autonomous worker agents spawned by the Orchestrator, each receiving an attenuated, sealed token restricting execution scope and spend.
 
 ```mermaid
@@ -21,7 +21,9 @@ flowchart LR
 Verifying endpoints across a distributed or multi-service architecture must validate access credentials without circular dependencies on a central issuing key. This architecture adopts **[Biscuit tokens](https://www.biscuitsec.org/)**, a decentralized authorization scheme based on public-key signatures and Datalog policies.
 
 ### 2.1 Contrast with HMAC Macaroons
-Classic [Macaroons](https://doi.org/10.14722/ndss.2014.23212) (as deployed in [L402](https://github.com/lightninglabs/L402)) rely on symmetric HMAC chains. Under that design, verifying a token requires the root secret key. Consequently, every verifying endpoint within a provider's infrastructure must either hold the root secret—expanding the compromise blast radius—or query the issuing service synchronously.
+Classic [Macaroons](https://doi.org/10.14722/ndss.2014.23212) (as deployed in [L402](https://github.com/lightninglabs/L402)) rely on symmetric HMAC chains. In L402 (formerly LSAT), this design aligns naturally with its Lightning Network origins: token issuance is intrinsically bound to a cryptographic payment hash and its preimage (proof-of-payment), typically verified directly by the single node or monolithic gateway that minted the token. In such single-service or small-scale topologies, maintaining a symmetric root secret locally incurs minimal architectural penalty while offering fast, lightweight HMAC-SHA256 operations.
+
+However, when scaling capability delegation across a distributed multi-service architecture or a multi-provider consortium, symmetric HMAC chains become a critical limitation: verifying a token requires knowledge of the root secret key. Consequently, every verifying endpoint within a provider's infrastructure must either hold the root secret—greatly expanding the compromise blast radius—or synchronously query the issuing service on every request, creating an operational bottleneck.
 
 In contrast, Biscuit uses asymmetric public-key cryptography. The Provider signs the root block with a private key ($SK_{root}$), and verifying endpoints (resource servers/gateways) validate the delegation chain using only the public key ($PK_{root}$). Offline attenuation remains cryptographically guaranteed: downstream holders (clients and orchestrators) can append restrictive blocks without knowledge of the private signing keys and without needing to configure or manage public key registries.
 
@@ -49,7 +51,7 @@ $$Sig_0 = \text{Sign}(SK_{root}, Block_0 \parallel PK_1)$$
 The Orchestrator derives specialized tokens for downstream sub-agents by appending signed attenuation blocks.
 
 ### 3.1 Datalog Execution Model: Stateless Checks vs. Stateful Budgets
-Biscuit policies are expressed in Datalog [CERI1989]. A `check` evaluates facts carried within the token blocks alongside **ambient facts** injected dynamically by the verifying endpoint for that specific request (e.g., `ambient::request_cost(0.05)`, `ambient::endpoint("/v1/ocr")`).
+Biscuit policies are expressed in [Datalog](https://doi.org/10.1109/69.43410) (Ceri et al., 1989). A `check` evaluates facts carried within the token blocks alongside **ambient facts** injected dynamically by the verifying endpoint for that specific request (e.g., `ambient::request_cost(0.05)`, `ambient::endpoint("/v1/ocr")`).
 
 The Datalog engine operates deterministically and without persistent state across requests. Authorization constraints fall into two distinct operational classes:
 
@@ -77,7 +79,7 @@ To enforce cumulative sub-budgets across an agent swarm:
    fact: sub_agent_id("worker-alpha");
    fact: allocated_budget(3.00);
    ```
-2. The verifying endpoint extracts `sub_agent_id` from the verified token and queries the central ledger for the composite key `(checkout_id, sub_agent_id)`.
+2. The verifying endpoint extracts `sub_agent_id` from the verified token and queries the central ledger (which in this architecture is simply a standard local datastore, such as a PostgreSQL or Redis database) for the composite key `(checkout_id, sub_agent_id)`.
 3. The server ensures that cumulative historical spend plus current request cost does not exceed `allocated_budget`.
 
 ## 4. Token Sealing & Proof of Possession
@@ -104,7 +106,7 @@ Verification proceeds sequentially from $PK_{root}$:
 
 ## 6. Budget Accounting & Ledger Management
 
-Because attenuation is purely additive, cryptographic verification alone cannot prevent sibling tokens derived from the same root from overdrawing the initial balance. The Provider maintains a stateful ledger indexed by `checkout_id`.
+Because attenuation is purely additive, cryptographic verification alone cannot prevent sibling tokens derived from the same root from overdrawing the initial balance. The Provider maintains a stateful ledger (a conventional relational or key-value datastore, such as PostgreSQL, SQLite, or Redis) indexed by `checkout_id`.
 
 ### 6.1 Two-Phase Settlement for Dynamic Costs (Hold / Capture)
 For variable-cost workloads (such as LLM generation and streaming pipelines), billing post-execution creates overdraft risks, while static pre-billing is inflexible. The Provider ledger implements an atomic two-phase lifecycle:
