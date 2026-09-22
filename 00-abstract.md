@@ -1,14 +1,14 @@
 # Attenuated Agent Budgets: Biscuits-Based Sub-Budget Delegation for Multi-Agent Swarms via Merchant-of-Record-Funded Payments
 
 The growing interest in Machine-to-Machine (M2M) microtransactions has produced several protocol standards (L402 [L402], X402 [X402], and MPP [MPP]) that enable autonomous agents to pay for services per request, typically settled over cryptocurrency or wallet-based rails.
-For freelancers and small-to-medium enterprises (SMEs) operating under European tax regimes, however, this model introduces structural friction: legislation in jurisdictions such as Italy and Spain treats each crypto-denominated transfer as a taxable disposal event without a de minimis exemption. Settling hundreds or thousands of micro-transactions autonomously is administrative and compliance overhead that renders per-request crypto settlement impractical for this demographic.
+For freelancers and small-to-medium enterprises (SMEs) operating under European tax regimes, however, this model introduces structural friction: legislation in jurisdictions such as Italy and Spain treats each crypto-denominated transfer as a taxable disposal event without a de minimis exemption. Settling hundreds or thousands of micro-transactions autonomously is administrative and compliance overhead that renders per-request crypto settlement impractical for them.
 
 This whitepaper addresses a specific operational profile: entities and providers who:
 - (a) cannot or will not rely on cryptocurrency,
 - (b) require tax, invoicing, and VAT compliance offloaded to a Merchant of Record (MoR), and
 - (c) need to expose pay-per-use M2M services to swarms of autonomous sub-agents.
 
-Meeting these constraints requires decoupling upfront financial settlement from programmatic access delegation. A single, human-authorized fiat transaction is processed through a MoR, issuing a "Master Biscuit" upon settlement. This token functions as a locally verifiable, cryptographically attenuable bearer credential—classified economically and legally under the EU Voucher Directive [DIRECTIVE2016_1065] as a Single-Purpose Voucher (SPV).
+Meeting these constraints requires decoupling upfront financial settlement from programmatic access delegation. A single, human-authorized fiat transaction is processed through a MoR, issuing a "Master Biscuit" upon settlement. This token functions as a locally verifiable, cryptographically attenuable bearer credential, classified economically and legally under the EU Voucher Directive [DIRECTIVE2016_1065] as a Single-Purpose Voucher (SPV).
 
 A primary orchestrator agent attenuates the Master Biscuit offline into bounded sub-budgets, distributing them to autonomous sub-agents without further interaction with the issuer. This approach involves deliberate architectural trade-offs:
 - Verifying endpoints must maintain state to enforce cumulative spend across distributed agents, as Datalog caveats alone cannot enforce global ceilings without state tracking.
