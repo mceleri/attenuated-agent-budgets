@@ -40,7 +40,7 @@ In our primary target scenario (a single Provider offering digital API services 
 
 ### 3.2 Multi-Purpose Vouchers (MPV) — The Consortium / Multi-Provider Scenario
 
-Under Article 30a(2), any voucher that is not an SPV is classified as a **Multi-Purpose Voucher (MPV)**. This applies when the voucher can be redeemed across multiple independent legal entities operating in different jurisdictions, or for services subject to variable VAT rates (such as the Consortium model described in `02-architecture.md`).
+Under Article 30a(2), any voucher that is not an SPV is classified as a **Multi-Purpose Voucher (MPV)**. This applies when the voucher can be redeemed across multiple independent legal entities operating in different jurisdictions, or for services subject to variable VAT rates (such as the Consortium model described in [Section 6.3 of 02-architecture.md](./02-architecture.md#63-architectural-scope-sme-model--vertical-partitioning)).
 
 - **Tax Timing**: Under Article 30b(2), the initial sale of an MPV by the MoR is **not subject to VAT** at the moment of issue; it is treated as a financial exchange of monetary consideration.
 - **Tax Chargeability upon Redemption**: VAT becomes chargeable **only when the services are actually supplied** upon redemption. When a sub-agent calls Provider 2 using an attenuated token, Provider 2 accounts for VAT on the consideration received for that specific consumption.

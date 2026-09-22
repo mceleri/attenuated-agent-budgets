@@ -1,6 +1,6 @@
 # Landscape (as of mid-2026)
 
-This is not a deep technical breakdown of each protocol, plenty of good documentation exists for that already, and it would age faster than this whitepaper. The goal here is narrower: for each relevant piece of the M2M payment landscape, what does it actually offer, and where does it stop short of what this whitepaper proposes?
+This section does not provide an exhaustive technical breakdown of each protocol; comprehensive external documentation already exists. Instead, the focus is narrower: evaluating what each relevant component of the M2M payment landscape provides, and identifying where it falls short of this proposal's objectives.
 
 Four questions are used to compare them:
 
@@ -19,7 +19,7 @@ An HTTP 402-based standard ([X402](https://github.com/x402-foundation/x402)) his
 
 ## MPP (Machine Payments Protocol)
 
-Backed by Stripe and Tempo Labs ([MPP](https://mpp.dev)), designed to be payment-method agnostic (supporting stablecoins, credit cards via Shared Payment Tokens, and deferred billing). MPP provides a verified mechanism for card-based fiat settlement without client-side crypto wallets. It defines two payment intents: one-shot `charge` and pre-funded `session` (using off-chain vouchers to avoid per-call settlement). However, session support is currently confirmed only on crypto rails (Tempo). Crucially, MPP does not act as a Merchant of Record (the vendor remains liable for indirect taxation), nor does it provide cryptographic delegation primitives for agent swarms.
+Backed by Stripe and Tempo Labs ([MPP](https://mpp.dev)), designed to be payment-method agnostic (supporting stablecoins, credit cards via Shared Payment Tokens, and deferred billing). MPP provides a verified mechanism for card-based fiat settlement without client-side crypto wallets. It defines two payment intents: one-shot `charge` and pre-funded `session` (using off-chain vouchers to avoid per-call settlement). While session support is currently confirmed only on crypto rails (Tempo), MPP does not act as a Merchant of Record (leaving indirect tax liability to the vendor) and provides no cryptographic delegation primitives for agent swarms.
 
 ## MoR-Backed Marketplaces (e.g., Google Cloud Marketplace + AP2)
 
@@ -29,13 +29,13 @@ Distribution platforms rather than open wire protocols. Google Cloud Marketplace
 
 | Protocol / Platform | No Crypto Required | Fiat / MoR-Native | Agent-Native Flow | Granular Swarm Delegation |
 |---|---|---|---|---|
-| **[L402](https://github.com/lightninglabs/L402)** | ❌ | ❌ | ✅ | ✅ (via [Macaroons](https://doi.org/10.14722/ndss.2014.23212)) |
-| **[X402](https://github.com/x402-foundation/x402)** | ❌ (fiat unconfirmed) | ❌ | ✅ | ❌ |
-| **[MPP](https://mpp.dev)** | ✅ (charge mode) | ❌ | ✅ | ❌ |
-| **MoR Marketplaces (GCM + [AP2](https://github.com/google-agentic-commerce/AP2))** | ✅ | ✅ | ✅ | ❌ |
-| **This Proposal** | ✅ | ✅ | ❌ (Settled once upfront) | ✅ (via [Biscuits](https://www.biscuitsec.org/)) |
+| **[L402](https://github.com/lightninglabs/L402)** | No | No | Yes | Yes (via [Macaroons](https://doi.org/10.14722/ndss.2014.23212)) |
+| **[X402](https://github.com/x402-foundation/x402)** | No (fiat unconfirmed) | No | Yes | No |
+| **[MPP](https://mpp.dev)** | Yes (charge mode) | No | Yes | No |
+| **MoR Marketplaces (GCM + [AP2](https://github.com/google-agentic-commerce/AP2))** | Yes | Yes | Yes | No |
+| **This Proposal** | Yes | Yes | No (settled upfront) | Yes (via [Biscuits](https://www.biscuitsec.org/)) |
 
-No existing option checks every column at once. L402 has the delegation mechanism this whitepaper borrows from, but on the wrong settlement rail for the target audience. Everything fiat/MoR-capable stops at the level of a single purchasing entity, without a way to further delegate that budget down into an agent swarm. That gap is the whitepaper's actual scope, not a claim that M2M payments or MoR-backed monetization don't exist yet, both clearly do.
+No existing approach satisfies all four criteria simultaneously. L402 demonstrates capability delegation, but binds settlement to a cryptocurrency network that introduces tax friction for European businesses. Conversely, existing fiat and MoR solutions govern access only at the level of a single purchasing entity, lacking mechanisms to delegate that entitlement down to an autonomous agent swarm. Bridging that operational gap constitutes the primary scope of this proposal.
 
 *Verified with primary sources as of mid-2026. This space moves fast enough that some of the above may already be outdated by the time you're reading it. Corrections welcome via issue.*
 

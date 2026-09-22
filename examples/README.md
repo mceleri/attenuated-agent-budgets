@@ -23,8 +23,8 @@ python3 demo.py
 
 | Component | File | Whitepaper Chapter Mapping |
 |---|---|---|
-| **API Provider** | [`provider.py`](./provider.py) | - Root KeyPair management & Block 0 minting ([`02-architecture.md`](../02-architecture.md) §2)<br>- Two-phase dynamic pricing hold/capture ([`02-architecture.md`](../02-architecture.md) §6.1)<br>- Top-up re-crediting ([`02-architecture.md`](../02-architecture.md) §6.2)<br>- Surgical revocation store ([`02-architecture.md`](../02-architecture.md) §7.2)<br>- HTTP status code handling ([`03-wire-protocol.md`](../03-wire-protocol.md) §3) |
-| **Orchestrator** | [`orchestrator.py`](./orchestrator.py) | - Offline attenuation ([`02-architecture.md`](../02-architecture.md) §3)<br>- Extraction of block revocation IDs ([`02-architecture.md`](../02-architecture.md) §7.2) |
+| **API Provider** | [`provider.py`](./provider.py) | - Root KeyPair management & Block 0 minting ([`02-architecture.md`](../02-architecture.md#2-cryptographic-primitive-biscuit-tokens) Section 2)<br>- Two-phase dynamic pricing hold/capture ([`02-architecture.md`](../02-architecture.md#61-two-phase-settlement-for-dynamic-costs-hold--capture) Section 6.1)<br>- Top-up re-crediting ([`02-architecture.md`](../02-architecture.md#62-budget-top-up) Section 6.2)<br>- Surgical revocation store ([`02-architecture.md`](../02-architecture.md#72-tier-2-surgical-sub-agent-revocation) Section 7.2)<br>- HTTP status code handling ([`03-wire-protocol.md`](../03-wire-protocol.md#4-http-status-codes--error-response-matrix) Section 4) |
+| **Orchestrator** | [`orchestrator.py`](./orchestrator.py) | - Offline attenuation ([`02-architecture.md`](../02-architecture.md#3-attenuation--datalog-semantics) Section 3)<br>- Extraction of block revocation IDs ([`02-architecture.md`](../02-architecture.md#72-tier-2-surgical-sub-agent-revocation) Section 7.2) |
 | **End-to-End Suite** | [`demo.py`](./demo.py) | - Exercises all 7 protocol phases end-to-end |
 
 ## Demonstrated Lifecycle Phases
