@@ -6,7 +6,7 @@ Cryptographic budget delegation (Biscuits) for multi-agent M2M payments via Merc
 
 ## The Problem
 
-Current M2M payment protocols (such as L402, X402, and MPP) generally assume crypto-native or per-request settlement. For freelancers and SMEs under several European tax regimes, that's a problem: every crypto-denominated microtransaction can be a taxable disposal event, with no de minimis exemption. Hundreds (or thousand) automated €0.01 calls can mean to many reportable events.
+Current M2M payment protocols (such as L402, X402, and MPP) generally assume crypto-native or per-request settlement. For freelancers and SMEs under several European tax regimes, that's a problem: every crypto-denominated microtransaction can be a taxable disposal event, with no de minimis exemption. Hundreds (or thousands) of automated €0.01 calls can mean too many reportable events.
 
 This project asks a narrower question: once a human has paid once, in fiat, through a Merchant of Record, how do you let an orchestrator agent split that budget into independently revocable, cryptographically enforced sub-budgets for its worker agents, entirely offline, without touching crypto rails?
 
@@ -23,7 +23,7 @@ flowchart LR
     SB -->|Spend| Svc
 ```
 
-One signed [Biscuit token](https://www.biscuitsec.org/) carries the budget. The orchestrator can fork it into as many scoped, capped, sealed sub-tokens as it needs. Each one independently revocable. A stateful ledger enforces the cumulative ceiling and handles two-phase hold/capture for variable-cost workloads (LLM generation, streaming, etc.).
+One signed [Biscuit token](https://www.biscuitsec.org/) carries the budget. The orchestrator can fork it into as many scoped, capped, sealed sub-tokens as needed, each independently revocable without contacting the issuer. A stateful ledger enforces the cumulative ceiling and handles two-phase hold/capture for variable-cost workloads (LLM generation, streaming, etc.).
 
 Full details:
 - Cryptographic architecture and Datalog semantics in [`02-architecture.md`](./02-architecture.md)
