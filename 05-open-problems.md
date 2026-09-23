@@ -117,3 +117,20 @@ To mitigate these risks, the architecture enforces a strict privilege separation
 
 Revocation requests must authenticate via this out-of-band management secret (or via asymmetric Proof of Possession tied to the Orchestrator's root keypair). While this resolves cross-tenant IDOR and rogue worker self-destruction, it introduces a statefulness trade-off: orchestrators must maintain durable, secure state for management secrets across process lifecycles, rather than operating in a completely stateless, ephemeral manner.
 
+## 8. Residual Credit Reclamation and Master Token Re-issuance
+
+### 8.1 Capital Lockup Post-Revocation
+Because cryptographic revocation in Biscuit operates via immutable blacklists of block hashes, a revoked token lineage cannot be reinstated. If an orchestrator revokes an entire Master Token (for instance, following a suspected security breach of the orchestrator host) or terminates an intermediate branch with substantial unspent funds, the remaining fiat balance remains recorded in the provider's stateful ledger under `checkout_id`.
+
+Without an explicit re-issuance mechanism, this leads to stranded capital: the customer has purchased a valid legal voucher with remaining credit, but lacking an unrevoked cryptographic credential, downstream agents cannot consume it.
+
+### 8.2 Scope Exclusion: UX and Identity Dependencies
+To prevent capital loss, production implementations should track residual balances and provide an administrative path to mint fresh Master Tokens against the remaining ledger balance.
+
+This operational lifecycle is deliberately omitted from this whitepaper specification because its concrete design depends on the provider's customer experience architecture and identity model:
+- **Authenticated Account Portals:** Providers maintaining persistent customer accounts (e.g., developer dashboards with OAuth2/OIDC logins) can readily expose a self-service management interface or administrative API to inspect residual balances and trigger token re-minting.
+- **Account-less Guest Flows:** Providers offering purely ephemeral, account-less checkout experiences lack persistent principal identities. Reclaiming stranded credit in such architectures requires alternative recovery mechanisms, such as challenge-response proofs tied to payment receipts, email magic links, or utilizing the out-of-band `revocation_secret` as a recovery credential.
+
+Because these choices are governed by commercial product requirements and UX preferences rather than core M2M cryptographic delegation primitives, balance re-minting workflows remain an open implementation decision for individual providers.
+
+
