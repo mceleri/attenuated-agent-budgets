@@ -2,13 +2,13 @@
 
 Cryptographic budget delegation (Biscuits) for multi-agent M2M payments via Merchant of Record fiat settlement.
 
-> Turn one fiat payment into a revocable, offline-splittable spending budget for a swarm of autonomous agents — no crypto, no wallets, no per-call settlement.
+> Turn one fiat payment into a revocable, offline-splittable spending budget for a swarm of autonomous agents. No crypto, no wallets, no per-call settlement.
 
 ## The Problem
 
-Current M2M payment protocols (such as L402, X402, and MPP) generally assume crypto-native or per-request settlement. For freelancers and SMEs under several European tax regimes, that's a dealbreaker: every crypto-denominated microtransaction can be a taxable disposal event, with no de minimis exemption. Ten thousand automated €0.002 calls can mean ten thousand reportable events.
+Current M2M payment protocols (such as L402, X402, and MPP) generally assume crypto-native or per-request settlement. For freelancers and SMEs under several European tax regimes, that's a problem: every crypto-denominated microtransaction can be a taxable disposal event, with no de minimis exemption. Hundreds (or thousand) automated €0.01 calls can mean to many reportable events.
 
-This project asks a narrower question: once a human has paid once, in fiat, through a Merchant of Record — how do you let an orchestrator agent split that budget into independently revocable, cryptographically enforced sub-budgets for its worker agents, entirely offline, without touching crypto rails?
+This project asks a narrower question: once a human has paid once, in fiat, through a Merchant of Record, how do you let an orchestrator agent split that budget into independently revocable, cryptographically enforced sub-budgets for its worker agents, entirely offline, without touching crypto rails?
 
 ## How it works
 
@@ -23,7 +23,7 @@ flowchart LR
     SB -->|Spend| Svc
 ```
 
-One signed [Biscuit token](https://www.biscuitsec.org/) carries the budget. The orchestrator can fork it into as many scoped, capped, sealed sub-tokens as it needs — each one independently revocable — without ever calling back to the issuer. A stateful ledger enforces the cumulative ceiling and handles two-phase hold/capture for variable-cost workloads (LLM generation, streaming, etc.).
+One signed [Biscuit token](https://www.biscuitsec.org/) carries the budget. The orchestrator can fork it into as many scoped, capped, sealed sub-tokens as it needs. Each one independently revocable. A stateful ledger enforces the cumulative ceiling and handles two-phase hold/capture for variable-cost workloads (LLM generation, streaming, etc.).
 
 Full details:
 - Cryptographic architecture and Datalog semantics in [`02-architecture.md`](./02-architecture.md)
@@ -34,7 +34,7 @@ Full details:
 
 This is a specification and reference implementation, not a production system. The cryptographic architecture, X402 wire protocol, EU tax analysis (SPV classification), and a runnable Python reference implementation are complete and tested.
 
-Known gaps and trade-offs — ledger contention under concurrent swarms, orphaned holds, chargeback exposure, revocation DoS vectors — are documented honestly in [`05-open-problems.md`](./05-open-problems.md) rather than glossed over. If you're evaluating this for production use, start there.
+Known gaps and trade-offs (ledger contention under concurrent swarms, orphaned holds, chargeback exposure, revocation DoS vectors) are documented in [`05-open-problems.md`](./05-open-problems.md) rather than glossed over. If you're evaluating this for production use, start there.
 
 ## Contents
 
@@ -59,7 +59,7 @@ pip install -r requirements.txt
 python3 demo.py
 ```
 
-Runs in seconds, no external services required — it simulates the MoR webhook, provider, and ledger in-process. Expect output like:
+Runs in seconds, no payments or external services required. It simulates the MoR webhook, provider, and ledger in-process. Expect output like:
 
 ```text
 >> STEP 7: Surgical Revocation of Rogue Sub-Agent
@@ -79,10 +79,10 @@ Runs in seconds, no external services required — it simulates the MoR webhook,
 ## FAQ
 
 **Why not just use Stripe metered billing / a plain API key with a quota?**  
-Because the quota then has to live in one central place the orchestrator calls on every spend decision. Biscuit lets the orchestrator carve out and hand off sub-budgets offline, to agents it doesn't fully trust, with no round-trip to the issuer and no shared secret — only the verifying endpoint needs the public key.
+Because the quota then has to live in one central place the orchestrator calls on every spend decision. Biscuit lets the orchestrator carve out and hand off sub-budgets offline, to agents it doesn't fully trust, with no round-trip to the issuer and no shared secret.
 
 **Why not just use X402 / L402 as-is?**  
-They are built for crypto-native settlement. This proposal is not a replacement — it is a fiat on-ramp for the same capability delegation problem, aimed at the EU freelancer and SME case where per-call crypto settlement creates unacceptable tax and reporting liabilities.
+They are built for crypto-native settlement. This proposal is not a replacement. It is a fiat on-ramp for the same capability delegation problem, aimed at the EU freelancer and SME case where per-call crypto settlement creates unacceptable tax and reporting liabilities.
 
 **Is this audited / production-ready?**  
 No. It is a specification with a working reference implementation, published to explore the design space and gather feedback. See [`05-open-problems.md`](./05-open-problems.md) for known limitations and open questions.
