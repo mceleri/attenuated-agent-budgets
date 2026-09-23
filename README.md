@@ -2,7 +2,7 @@
 
 Cryptographic budget delegation (Biscuits) for multi-agent M2M payments via Merchant of Record fiat settlement.
 
-> **TL;DR**: Turn one fiat payment into a revocable, offline-splittable spending budget for a swarm of autonomous agents — no crypto, no wallets, no per-call settlement.
+> Turn one fiat payment into a revocable, offline-splittable spending budget for a swarm of autonomous agents — no crypto, no wallets, no per-call settlement.
 
 ## The Problem
 
