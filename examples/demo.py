@@ -33,18 +33,19 @@ def main():
     initial_deposit_cents = 1000  # 10.00 EUR
     user_id = "org_acme_corp"
 
-    checkout_id, master_token_b64 = provider.create_checkout_and_mint(
+    checkout_id, master_token_b64, revocation_secret = provider.create_checkout_and_mint(
         user_id=user_id, budget_cents=initial_deposit_cents
     )
     print(f"[*] MoR Checkout Completed: {checkout_id}")
     print(f"[*] Initial Ledger Balance: {initial_deposit_cents / 100:.2f} EUR")
     print(f"[*] Master Biscuit (Base64, snippet): {master_token_b64[:45]}...")
+    print(f"[*] Admin Revocation Secret (snippet): {revocation_secret[:15]}...")
 
     # -------------------------------------------------------------------------
     # STEP 2: Orchestrator Offline Attenuation
     # -------------------------------------------------------------------------
     print_step("STEP 2: Orchestrator Offline Sub-Agent Attenuation")
-    orchestrator = Orchestrator(master_token_b64, provider.public_key)
+    orchestrator = Orchestrator(master_token_b64, provider.public_key, revocation_secret)
 
     # Sub-Agent 1: Search Agent (Limited to /v1/search, max 0.50 EUR per call)
     agent1_id = "agent_search_01"
@@ -187,8 +188,29 @@ def main():
     # -------------------------------------------------------------------------
     print_step("STEP 7: Surgical Revocation of Rogue Sub-Agent")
     print(f"[*] Orchestrator identifies compromised agent: {agent1_id}")
-    print(f"[*] Revoking block ID: {rev_id_search}")
-    provider.revoke_block(rev_id_search)
+    print(f"[*] Target Block Revocation ID: {rev_id_search}")
+
+    # Test 7A: Rogue or unauthorized entity attempts revocation without valid secret
+    print("\n[-] Test 7A: Rogue entity attempts revocation with invalid management secret...")
+    status, res = provider.revoke_block(
+        checkout_id=checkout_id,
+        revocation_secret="rev_sec_invalid_attacker_key",
+        revocation_id=rev_id_search,
+    )
+    print(f"    HTTP Status: {status} (Expected 401)")
+    print(f"    Response: {res}")
+    assert status == 401
+
+    # Test 7B: Orchestrator invokes revocation using authentic revocation_secret
+    print("\n[+] Test 7B: Orchestrator executes revocation via management secret...")
+    status, res = orchestrator.revoke_sub_agent(
+        provider=provider,
+        checkout_id=checkout_id,
+        revocation_id=rev_id_search,
+    )
+    print(f"    HTTP Status: {status} (Expected 200)")
+    print(f"    Response: {res}")
+    assert status == 200
 
     # Sub-Agent 1 is now blocked
     print(f"\n[-] Attempting call with revoked {agent1_id}:")

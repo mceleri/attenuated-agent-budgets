@@ -198,12 +198,12 @@ PAYMENT-REQUIRED: eyJ4NDAyVmVyc2lvbiI6Miwic2NoZW1lIjoibW9yLWZpYXQiLCJtb3IiOiJwYW
 ### 5.2 Flow 2: Token Provisioning & Attenuation
 
 1. **Settlement**: The human/orchestrator completes the checkout via `checkout_url`.
-2. **Issuance**: The MoR issues a `transaction.completed` webhook to the Provider backend, which mints the Master Token with Block 0:
+2. **Issuance**: The MoR issues a `transaction.completed` webhook to the Provider backend, which mints the Master Token with Block 0 and generates a unique, high-entropy `revocation_secret` bound to `checkout_id` in the Provider ledger. Both credentials are delivered to the Orchestrator:
    ```datalog
    fact: checkout_id("chk_883019");
    fact: total_budget(20.00);
    ```
-3. **Attenuation & Sealing**: The Orchestrator appends Block 1 offline and strips the active private key:
+3. **Attenuation & Sealing**: The Orchestrator appends Block 1 offline, records the resulting `revocation_id` in its local registry, and strips the active private key. The `revocation_secret` is held strictly by the Orchestrator and never delegated to the worker:
    ```datalog
    check if ambient::endpoint($e), $e == "/v1/ocr";
    check if ambient::request_cost($c), $c <= 0.50;
@@ -353,7 +353,7 @@ PAYMENT-RESPONSE: eyJzdWNjZXNzIjpmYWxzZSwiZXJyb3JSZWFzb24iOiJidWRnZXRfZXhoYXVzdG
 
 ### 5.6 Flow 6: Surgical Revocation
 
-The Orchestrator revokes an anomalous sub-agent's block revocation ID via the management API.
+The Orchestrator revokes an anomalous sub-agent's block revocation ID via the management API. To isolate administrative capabilities from bearer spending tokens, the Orchestrator authenticates using the `revocation_secret` provisioned during the initial MoR checkout.
 
 ```mermaid
 sequenceDiagram
@@ -362,7 +362,8 @@ sequenceDiagram
     participant SA as Rogue Sub-Agent
     participant SB as Sibling Sub-Agent
 
-    O->>P: POST /v1/budgets/revoke (Revocation ID: 9f83a1b...)
+    O->>P: POST /v1/budgets/revoke (Auth: revocation_secret, ID: 9f83a1b...)
+    P->>P: Validate revocation_secret matches checkout_id
     P-->>O: 200 OK (Revoked)
     SA->>P: POST /v1/ocr (Token with Block = 9f83a1b...)
     P-->>SA: 410 Gone (token_revoked)
@@ -374,14 +375,26 @@ sequenceDiagram
 ```http
 POST /v1/budgets/revoke HTTP/1.1
 Host: api.provider.example
+Authorization: Bearer rev_sec_8f92a1b490ce4821a0f912c984210984
 Content-Type: application/json
-PAYMENT-SIGNATURE: eyJ4NDAyVmVyc2lvbiI6Miwic2NoZW1lIjoibW9yLWZpYXQiLCJwYXlsb2FkIjp7InRva2VuIjoiPE1BU1RFUl9UT0tFTj4ifX0=
 
 {
   "checkout_id": "chk_883019",
   "sub_agent_id": "worker-rogue-01",
   "revocation_id": "9f83a1b4c278e901fa5412bced88201948ef11029481bcde5819401828471201",
   "reason": "loop_detected"
+}
+```
+
+#### Revocation Response
+```http
+HTTP/1.1 200 OK
+Content-Type: application/json; charset=utf-8
+
+{
+  "status": "revoked",
+  "checkout_id": "chk_883019",
+  "revoked_block_id": "9f83a1b4c278e901fa5412bced88201948ef11029481bcde5819401828471201"
 }
 ```
 

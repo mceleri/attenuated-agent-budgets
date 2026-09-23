@@ -9,9 +9,15 @@ from biscuit_auth import Biscuit, BlockBuilder, PublicKey
 
 
 class Orchestrator:
-    def __init__(self, master_token_b64: str, provider_public_key: PublicKey):
+    def __init__(
+        self,
+        master_token_b64: str,
+        provider_public_key: PublicKey,
+        revocation_secret: str = "",
+    ):
         self.master_token_b64 = master_token_b64
         self.provider_public_key = provider_public_key
+        self.revocation_secret = revocation_secret
 
     def attenuate_sub_budget(
         self,
@@ -42,3 +48,20 @@ class Orchestrator:
         block_revocation_id = attenuated_biscuit.revocation_ids[-1]
         
         return attenuated_biscuit.to_base64(), block_revocation_id
+
+    def revoke_sub_agent(
+        self,
+        provider,
+        checkout_id: str,
+        revocation_id: str,
+    ) -> Tuple[int, dict]:
+        """
+        Calls the Provider administrative revocation endpoint using the out-of-band revocation_secret.
+        Sub-agents only hold attenuated Biscuits and cannot perform this call.
+        """
+        return provider.revoke_block(
+            checkout_id=checkout_id,
+            revocation_secret=self.revocation_secret,
+            revocation_id=revocation_id,
+        )
+

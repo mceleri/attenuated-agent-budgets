@@ -17,7 +17,7 @@ class Provider:
         self.public_key = self.root_keypair.public_key
 
         # ACID-like In-Memory Ledger
-        # checkout_id -> { "user_id": str, "currency": str, "available_cents": int, "spent_cents": int }
+        # checkout_id -> { "user_id": str, "currency": str, "available_cents": int, "spent_cents": int, "revocation_secret": str }
         self.ledgers: Dict[str, Dict[str, Any]] = {}
 
         # Active Holds for dynamic two-phase pricing
@@ -27,11 +27,13 @@ class Provider:
         # Surgical revocation list: set of revoked block revocation IDs (hex strings)
         self.revocation_list: Set[str] = set()
 
-    def create_checkout_and_mint(self, user_id: str, budget_cents: int) -> Tuple[str, str]:
+    def create_checkout_and_mint(self, user_id: str, budget_cents: int) -> Tuple[str, str, str]:
         """
-        Simulates Merchant of Record (MoR) checkout completion and mints Block 0 (Master Token).
+        Simulates Merchant of Record (MoR) checkout completion, mints Block 0 (Master Token),
+        and generates an out-of-band administrative revocation_secret for the Orchestrator.
         """
         checkout_id = f"chk_{uuid.uuid4().hex[:12]}"
+        revocation_secret = f"rev_sec_{uuid.uuid4().hex}"
         
         # Initialize ledger entry
         self.ledgers[checkout_id] = {
@@ -39,6 +41,7 @@ class Provider:
             "currency": "EUR",
             "available_cents": budget_cents,
             "spent_cents": 0,
+            "revocation_secret": revocation_secret,
         }
 
         # Build Master Biscuit (Block 0 / Authority Block)
@@ -49,7 +52,7 @@ class Provider:
         """
         builder = BiscuitBuilder(datalog_block0)
         master_biscuit = builder.build(self.root_keypair.private_key)
-        return checkout_id, master_biscuit.to_base64()
+        return checkout_id, master_biscuit.to_base64(), revocation_secret
 
     def top_up_checkout(self, checkout_id: str, amount_cents: int) -> Dict[str, Any]:
         """
@@ -66,11 +69,29 @@ class Provider:
             "added_cents": amount_cents,
         }
 
-    def revoke_block(self, revocation_id: str) -> None:
+    def revoke_block(
+        self,
+        checkout_id: str,
+        revocation_secret: str,
+        revocation_id: str,
+    ) -> Tuple[int, Dict[str, Any]]:
         """
         Registers a block's cryptographic revocation ID into the revocation list.
+        Enforces administrative authorization: requires matching revocation_secret for checkout_id.
         """
+        if checkout_id not in self.ledgers:
+            return 404, {"error": "LedgerNotFound", "message": f"Checkout ID {checkout_id} not found."}
+
+        expected_secret = self.ledgers[checkout_id].get("revocation_secret")
+        if not expected_secret or expected_secret != revocation_secret:
+            return 401, {"error": "Unauthorized", "message": "Invalid or missing revocation_secret."}
+
         self.revocation_list.add(revocation_id)
+        return 200, {
+            "status": "revoked",
+            "checkout_id": checkout_id,
+            "revoked_block_id": revocation_id,
+        }
 
     def verify_and_authorize(
         self,

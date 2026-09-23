@@ -98,3 +98,22 @@ Binding Biscuit tokens to client keypairs via Proof of Possession (PoP / DPoP) m
 In these environments, generating, storing, and accessing private keys securely (e.g., avoiding exposure in memory dumps or tool execution logs) presents operational complexity:
 1. **Key Extraction Risk:** If an LLM agent has arbitrary tool-execution capabilities, a prompt injection attack could instruct the agent to inspect its local filesystem or environment variables and exfiltrate the private key.
 2. **Computational Overhead:** Generating Ed25519 or ECDSA signatures for every high-frequency micro-invocation introduces non-trivial CPU overhead in high-throughput data processing pipelines compared to standard bearer token transmission over mTLS.
+
+## 7. Authorization Asymmetry and Denial of Service in Revocation APIs
+
+### 7.1 The Destructive Asymmetry of Bearer Revocation
+In capability-based authorization, bearer credentials conflate possession with authority. While this is acceptable for metered API consumption (where the maximum exposure of token theft is bounded by the unspent credit ceiling), treating revocation as an unprivileged or bearer-accessible operation introduces severe asymmetric failure modes:
+
+1. **Rogue Sub-Agent Fleet DoS:**
+   Every attenuated Biscuit deterministically contains the serialized payloads and signatures of all ancestor blocks, including Block 0 (the Authority Block). Consequently, every sub-agent inherently possesses the cryptographic `revocation_id` of Block 0. If revocation endpoints accepted standard bearer tokens or lacked capability checks, a compromised sub-agent (e.g., via prompt injection or sandbox escape) could invoke the revocation API against Block 0's `revocation_id`, permanently disabling the entire token lineage and halting healthy sibling agents.
+
+2. **Cross-Tenant Insecure Direct Object References (IDOR):**
+   Because a block's `revocation_id` is an intrinsic SHA-256 digest of its cryptographic content rather than a secret, any party that inspects network traffic or shares verifying endpoints could observe foreign revocation IDs. If a provider's revocation registry operates as a flat, global blacklist without verifying cryptographic lineage, an attacker with a valid account could submit a competitor's observed `revocation_id`, causing an immediate Denial of Service against third-party workloads.
+
+### 7.2 Separation of Spending from Management Authority
+To mitigate these risks, the architecture enforces a strict privilege separation:
+- **Operational Spending Credentials (Bearer Biscuit):** Delegated down into the agent swarm, attenuated offline, and sealed. Workers hold zero administrative authority and cannot reach management endpoints.
+- **Administrative Management Credentials (`revocation_secret`):** Generated exclusively at checkout by the Provider and returned directly to the human principal or primary Orchestrator. The Orchestrator retains this secret securely and never exposes it to sub-agent worker environments.
+
+Revocation requests must authenticate via this out-of-band management secret (or via asymmetric Proof of Possession tied to the Orchestrator's root keypair). While this resolves cross-tenant IDOR and rogue worker self-destruction, it introduces a statefulness trade-off: orchestrators must maintain durable, secure state for management secrets across process lifecycles, rather than operating in a completely stateless, ephemeral manner.
+

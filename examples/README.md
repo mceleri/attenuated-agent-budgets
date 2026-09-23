@@ -29,7 +29,7 @@ python3 demo.py
 
 ## Demonstrated Lifecycle Phases
 
-1. **Initial MoR Settlement:** User deposits €10.00 via Merchant of Record checkout. Provider initializes the database ledger on `checkout_id` and mints Master Token Block 0.
+1. **Initial MoR Settlement:** User deposits €10.00 via Merchant of Record checkout. Provider initializes the database ledger on `checkout_id`, mints Master Token Block 0, and returns an administrative `revocation_secret` exclusively to the Orchestrator.
 2. **Offline Attenuation:** Orchestrator derives two restricted sub-agent tokens completely offline (no network contact with Provider):
    - `token_search`: Restricted to `/v1/search`, max €0.50 per call.
    - `token_synth`: Restricted to `/v1/synthesize`, max €3.00 per call.
@@ -39,4 +39,4 @@ python3 demo.py
    - Search agent attempts call exceeding €0.50 ceiling $\rightarrow$ Blocked (`403 Forbidden`).
 5. **Two-Phase Metering (Hold & Capture):** Synthesis agent reserves pessimistic €2.50 hold on ledger, generates 1,420 LLM tokens (actual cost €0.85), and captures €0.85, releasing €1.65 unspent remainder back to available balance.
 6. **Budget Exhaustion & Seamless Top-Up:** When available balance reaches €0.00, requests fail with `402 Payment Required`. An MoR webhook adds €5.00 to the existing `checkout_id`. The agent retries using the *exact same Biscuit token* without re-issuance or re-attenuation (`200 OK`).
-7. **Surgical Revocation:** Orchestrator revokes the search agent's block `revocation_id` via `POST /v1/budgets/revoke`. Subsequent calls from the search agent fail immediately (`410 Gone / Revoked`), while the synthesis agent continues operating unaffected (`200 OK`).
+7. **Surgical Revocation:** Orchestrator revokes the search agent's block `revocation_id` via `POST /v1/budgets/revoke` authenticating with `revocation_secret`. Unauthorized attempts without the secret fail (`401 Unauthorized`). Subsequent calls from the search agent fail immediately (`410 Gone / Revoked`), while the synthesis agent continues operating unaffected (`200 OK`).

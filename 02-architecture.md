@@ -4,14 +4,14 @@
 
 - **Merchant of Record (MoR)**: Processes the upfront fiat payment, manages tax and indirect VAT/sales compliance, and settles funds to the Provider. The MoR operates outside the M2M protocol itself.
 - **Provider**: Exposes one or more M2M services. Holds and manages the private root signing key ($SK_{root}$) and distributes its corresponding public key ($PK_{root}$) to verifying endpoints (resource servers/gateways).
-- **Orchestrator**: Client-side coordinator agent. It may trigger or surface an initial 402 Payment Required challenge to the human user. Once the human user completes the fiat payment with the MoR, the Orchestrator receives the provisioned Master Token, attenuates it offline into restricted sub-budgets, and distributes them to downstream worker agents.
+- **Orchestrator**: Client-side coordinator agent. It may trigger or surface an initial 402 Payment Required challenge to the human user. Once the human user completes the fiat payment with the MoR, the Orchestrator receives the provisioned Master Token (for spending and offline attenuation) alongside a high-entropy management credential (`revocation_secret`) for administrative operations. It attenuates the Master Token offline into restricted sub-budgets and distributes them to downstream worker agents without sharing the management secret.
 - **Sub-Agents**: Autonomous worker agents spawned by the Orchestrator, each receiving an attenuated, sealed token restricting execution scope and spend.
 
 ```mermaid
 flowchart LR
     H[Human / Principal] -->|Fiat Payment| MoR[Merchant of Record]
     MoR -->|Settlement Webhook| P[Provider]
-    P -->|Issues Master Token| O[Orchestrator]
+    P -->|"Master Token & revocation_secret"| O[Orchestrator]
     O -->|Offline Attenuation| SA["Sub-Agent Alpha<br/>endpoint = /v1/ocr, max = €0.50"]
     O -->|Offline Attenuation| SB["Sub-Agent Beta<br/>allocated = €5.00"]
 ```
@@ -37,7 +37,7 @@ $$Sig_i = \text{Sign}(SK_i, Block_i \parallel PK_{i+1})$$
 The signature verifies both the integrity of $Block_i$ and the authenticity of $PK_{i+1}$, establishing a cryptographic chain of custody.
 
 ### 2.3 Master Token Issuance (The Authority Block)
-Upon receiving a confirmed payment from the MoR, the Provider generates the Master Token:
+Upon receiving a confirmed payment from the MoR, the Provider generates the Master Token and associated management credentials:
 1. **Block 0 (Authority Block)**: Contains the base entitlement and financial correlation identifier (e.g., `checkout_id = "chk_883019"`).
 2. **Key Generation**: Provider generates ephemeral keypair ($SK_1, PK_1$).
 3. **Signature**: Provider signs $Block_0 \parallel PK_1$ using $SK_{root}$:
@@ -45,6 +45,7 @@ Upon receiving a confirmed payment from the MoR, the Provider generates the Mast
 $$Sig_0 = \text{Sign}(SK_{root}, Block_0 \parallel PK_1)$$
 
 4. **Payload Delivery**: Delivered to the Orchestrator containing `[Block_0]`, `[PK_1]`, `[Sig_0]`, and active private key $SK_1$. Possession of $SK_1$ authorizes offline attenuation.
+5. **Management Secret Generation**: Concurrently, the Provider generates a high-entropy management credential (`revocation_secret`, such as a 256-bit random bearer secret) and stores its hash alongside `checkout_id` in the stateful ledger. This credential is delivered exclusively to the Orchestrator to isolate administrative capabilities (surgical revocation) from operational spending tokens.
 
 ## 3. Attenuation & Datalog Semantics
 
@@ -150,9 +151,10 @@ Triggered by payment refunds, disputes, or chargebacks reported via MoR webhooks
 
 ### 7.2 Tier 2: Surgical Sub-Agent Revocation
 When an individual sub-agent exhibits anomalous behavior (e.g., recursion loops), the Orchestrator can revoke that specific agent without terminating healthy swarm siblings:
-1. **Revocation Identifiers**: Each Biscuit block carries a cryptographic `revocation_id` (SHA-256 hash of block contents and signature).
-2. **Management API**: The Orchestrator calls `POST /v1/budgets/revoke`, authenticating with its Master Token and specifying the target block's `revocation_id`.
-3. **Enforcement**: Verifying endpoints match presented tokens against the revocation cache. Tokens containing the revoked block return `410 Gone`, while sibling chains remain authorized.
+1. **Cryptographic Block Identifiers**: Each Biscuit block deterministically derives a `revocation_id` (the SHA-256 hash of the serialized block payload and signature). When appending an attenuation block offline, the Orchestrator extracts and records the resulting `revocation_id` in its local agent registry.
+2. **Privilege Separation (Bearer Spending vs. Administrative Revocation)**: To prevent rogue or compromised sub-agents from revoking themselves, their siblings, or the Master Token, revocation requests require administrative authorization. The Orchestrator calls `POST /v1/budgets/revoke`, authenticating with its `revocation_secret` (via `Authorization: Bearer <revocation_secret>`) rather than a standard bearer Biscuit.
+3. **Lineage Validation & IDOR Prevention**: The Provider validates that the presented `revocation_secret` matches the designated `checkout_id`. Once authenticated, the target `revocation_id` is appended to the ledger's revoked block registry for that account. This eliminates cross-tenant Denial of Service (IDOR) attacks.
+4. **Enforcement**: Verifying endpoints match presented tokens against the revocation cache. Tokens containing the revoked block return `410 Gone`, while sibling chains remain authorized.
 
 ```mermaid
 sequenceDiagram
@@ -161,11 +163,13 @@ sequenceDiagram
     participant SB as Healthy Sub-Agent
     participant P as Provider Backend
 
-    O->>P: POST /v1/budgets/revoke (Revocation ID: 9f83...)
+    O->>P: POST /v1/budgets/revoke (Auth: revocation_secret, ID: 9f83...)
+    P->>P: Validate revocation_secret matches checkout_id
     P-->>O: 200 OK (Revocation recorded)
     SA->>P: POST /v1/ocr (Contains Block 9f83...)
     P-->>SA: 410 Gone (token_revoked)
     SB->>P: POST /v1/ocr (Contains Block 3c71...)
     P-->>SB: 200 OK (Processed)
 ```
+
 
